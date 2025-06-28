@@ -11,13 +11,13 @@ data class Ruta(
     val id: Int = 0,
 
     @ColumnInfo(name = "nombre_ruta")
-    val nombre: String, // Ej: "247"
+    val nombre: String,
 
-    @ColumnInfo(name = "tarjeta_visual") // <-- NUEVA COLUMNA
-    val tarjeta: String, // Ej: "247 Caña Brava"
+    @ColumnInfo(name = "tarjeta_visual")
+    val tarjeta: String,
 
     @ColumnInfo(name = "sentido_ruta")
-    val sentido: String, // Ej: "Ida" o "Vuelta"
+    val sentido: String,
 
     @ColumnInfo(name = "horario_ruta")
     val horario: String,
@@ -26,5 +26,8 @@ data class Ruta(
     val recorrido: String,
 
     @ColumnInfo(name = "barrios_principales")
-    val barrios: String
+    val barrios: String,
+
+    @ColumnInfo(name = "coordenadas_ruta") // <-- NUEVA COLUMNA
+    val coordenadas: String
 )

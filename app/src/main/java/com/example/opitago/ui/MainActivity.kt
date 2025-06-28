@@ -1,10 +1,12 @@
 package com.example.opitago.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
+import android.widget.EditText
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.doOnTextChanged
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -29,13 +31,15 @@ class MainActivity : AppCompatActivity() {
 
         configurarRecyclerView()
         observarRutas()
+        configurarBusqueda() // <-- La llamada importante
     }
 
     private fun configurarRecyclerView() {
-        // Ahora le pasamos la acción del clic al crear el adapter
         rutasAdapter = RutasAdapter { ruta ->
-            // Esto se ejecutará cuando se haga clic en una ruta
-            Toast.makeText(this, "Clic en: ${ruta.nombre} - ${ruta.sentido}", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, DetailActivity::class.java).apply {
+                putExtra("EXTRA_RUTA_NOMBRE", ruta.nombre)
+            }
+            startActivity(intent)
         }
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerViewRutas)
         recyclerView.adapter = rutasAdapter
@@ -48,6 +52,15 @@ class MainActivity : AppCompatActivity() {
                 rutasAdapter.submitList(listaDeRutas)
                 Log.d("MainActivity", "Lista actualizada en el UI: ${listaDeRutas.size} rutas")
             }
+        }
+    }
+
+    // La función que conecta la UI con el ViewModel
+    private fun configurarBusqueda() {
+        val etBusqueda = findViewById<EditText>(R.id.etBusqueda)
+
+        etBusqueda.doOnTextChanged { texto, _, _, _ ->
+            mainViewModel.enBusquedaCambiada(texto.toString())
         }
     }
 }

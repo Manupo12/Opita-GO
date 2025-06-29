@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity() {
         MainViewModelFactory(repository)
     }
 
-    private lateinit var rutasAdapter: RutasAdapter
+    private lateinit var rutasAdapter: RutasAgrupadasAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,13 +31,14 @@ class MainActivity : AppCompatActivity() {
 
         configurarRecyclerView()
         observarRutas()
-        configurarBusqueda() // <-- La llamada importante
+        configurarBusqueda()
     }
 
     private fun configurarRecyclerView() {
-        rutasAdapter = RutasAdapter { ruta ->
+        // CAMBIO: La creación del adapter ahora es más simple
+        rutasAdapter = RutasAgrupadasAdapter { rutaAgrupada ->
             val intent = Intent(this, DetailActivity::class.java).apply {
-                putExtra("EXTRA_RUTA_NOMBRE", ruta.nombre)
+                putExtra("EXTRA_RUTA_NOMBRE", rutaAgrupada.nombre)
             }
             startActivity(intent)
         }
@@ -48,14 +49,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun observarRutas() {
         lifecycleScope.launch {
-            mainViewModel.todasLasRutas.collect { listaDeRutas ->
-                rutasAdapter.submitList(listaDeRutas)
-                Log.d("MainActivity", "Lista actualizada en el UI: ${listaDeRutas.size} rutas")
+            mainViewModel.rutasAgrupadas.collect { listaDeRutasAgrupadas ->
+                rutasAdapter.submitList(listaDeRutasAgrupadas)
+                Log.d("MainActivity", "Lista actualizada en el UI: ${listaDeRutasAgrupadas.size} rutas")
             }
         }
     }
 
-    // La función que conecta la UI con el ViewModel
     private fun configurarBusqueda() {
         val etBusqueda = findViewById<EditText>(R.id.etBusqueda)
 

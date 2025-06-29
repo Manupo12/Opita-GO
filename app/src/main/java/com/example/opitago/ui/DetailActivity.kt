@@ -1,10 +1,17 @@
 package com.example.opitago.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Color
+import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.opitago.R
 import com.example.opitago.data.OpitaGODatabase
@@ -16,7 +23,9 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PolylineOptions
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch
 
 class DetailActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -28,16 +37,31 @@ class DetailActivity : AppCompatActivity(), OnMapReadyCallback {
         DetailViewModelFactory(repository)
     }
 
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                activarMiUbicacion()
+            } else {
+                Toast.makeText(this, "Permiso de ubicación denegado.", Toast.LENGTH_LONG).show()
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_detail)
 
-        // Recibimos el nombre de la ruta, ej: "247"
         val nombreRuta = intent.getStringExtra("EXTRA_RUTA_NOMBRE")
-
         if (nombreRuta != null) {
-            // Le pedimos al ViewModel que cargue los datos
             detailViewModel.cargarRutasPorNombre(nombreRuta)
+        }
+
+        val fab = findViewById<FloatingActionButton>(R.id.fab_proximidad)
+        fab.setOnClickListener {
+            if (::map.isInitialized && map.isMyLocationEnabled && map.myLocation != null) {
+                calcularYMostrarPuntoMasCercano(map.myLocation)
+            } else {
+                Toast.makeText(this, "Ubicación no disponible. Activa el GPS e inténtalo de nuevo.", Toast.LENGTH_LONG).show()
+            }
         }
 
         val mapFragment = supportFragmentManager
@@ -47,8 +71,57 @@ class DetailActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
-        // Observamos los datos del ViewModel
         observarRutas()
+        habilitarCapaDeUbicacion()
+    }
+
+    private fun habilitarCapaDeUbicacion() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            activarMiUbicacion()
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
+
+    private fun activarMiUbicacion() {
+        try {
+            map.isMyLocationEnabled = true
+        } catch (e: SecurityException) {
+            Log.e("DetailActivity", "Error de seguridad al activar la ubicación.", e)
+        }
+    }
+
+    private fun calcularYMostrarPuntoMasCercano(miUbicacion: Location) {
+        val rutasActuales = detailViewModel.rutas.value
+        if (rutasActuales.isEmpty()) return
+
+        var puntoMasCercano: LatLng? = null
+        var distanciaMinima = Float.MAX_VALUE
+
+        rutasActuales.forEach { ruta ->
+            val puntosDeRuta = parseCoordenadas(ruta.coordenadas)
+            puntosDeRuta.forEach { punto ->
+                val distancia = FloatArray(1)
+                Location.distanceBetween(
+                    miUbicacion.latitude, miUbicacion.longitude,
+                    punto.latitude, punto.longitude,
+                    distancia
+                )
+                if (distancia[0] < distanciaMinima) {
+                    distanciaMinima = distancia[0]
+                    puntoMasCercano = punto
+                }
+            }
+        }
+
+        puntoMasCercano?.let { puntoSeguro ->
+            map.addMarker(MarkerOptions().position(puntoSeguro).title("Punto más cercano"))
+            Toast.makeText(
+                this,
+                "El punto más cercano de la ruta está a ${distanciaMinima.toInt()} metros.",
+                Toast.LENGTH_LONG
+            ).show()
+        }
     }
 
     private fun observarRutas() {
@@ -56,15 +129,15 @@ class DetailActivity : AppCompatActivity(), OnMapReadyCallback {
             detailViewModel.rutas.collect { listaDeRutas ->
                 if (listaDeRutas.isNotEmpty()) {
                     dibujarRutasEnMapa(listaDeRutas)
+                    mostrarDescripciones(listaDeRutas)
                 }
             }
         }
     }
 
     private fun dibujarRutasEnMapa(rutas: List<Ruta>) {
-        map.clear() // Limpiamos el mapa de dibujos anteriores
+        map.clear()
         val boundsBuilder = LatLngBounds.Builder()
-
         rutas.forEach { ruta ->
             val puntosDeRuta = parseCoordenadas(ruta.coordenadas)
             if (puntosDeRuta.isNotEmpty()) {
@@ -73,20 +146,19 @@ class DetailActivity : AppCompatActivity(), OnMapReadyCallback {
                     .addAll(puntosDeRuta)
                     .color(colorDeRuta)
                     .width(12f)
-
                 map.addPolyline(polylineOptions)
-
-                // Añadimos todos los puntos al constructor de límites para hacer zoom
                 puntosDeRuta.forEach { punto ->
                     boundsBuilder.include(punto)
                 }
             }
         }
-
-        // Hacemos que la cámara haga zoom para que se vean todas las rutas dibujadas
-        if (rutas.any { it.coordenadas.isNotBlank() }) {
+        try {
             val bounds = boundsBuilder.build()
-            map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100)) // 100 es el padding
+            map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 150))
+        } catch (e: IllegalStateException) {
+            val neiva = LatLng(2.9273, -75.2819)
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(neiva, 13f))
+            Log.e("DetailActivity", "No se pudo construir los límites para el zoom.", e)
         }
     }
 
@@ -106,5 +178,20 @@ class DetailActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
         return listaDePuntos
+    }
+
+    private fun mostrarDescripciones(rutas: List<Ruta>) {
+        val headerTv = findViewById<TextView>(R.id.tvDetailHeader)
+        val recorridoIdaTv = findViewById<TextView>(R.id.tvRecorridoIda)
+        val recorridoVueltaTv = findViewById<TextView>(R.id.tvRecorridoVuelta)
+
+        val nombreRuta = rutas.firstOrNull()?.nombre ?: "Ruta"
+        headerTv.text = "Ruta $nombreRuta"
+
+        val rutaIda = rutas.find { it.sentido == "Ida" || it.sentido == "Único" }
+        val rutaVuelta = rutas.find { it.sentido == "Vuelta" }
+
+        recorridoIdaTv.text = rutaIda?.recorrido ?: "No disponible"
+        recorridoVueltaTv.text = rutaVuelta?.recorrido ?: "No disponible"
     }
 }

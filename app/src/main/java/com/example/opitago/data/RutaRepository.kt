@@ -14,7 +14,6 @@ class RutaRepository(private val rutaDao: RutaDao) {
         rutaDao.insertar(ruta)
     }
 
-    // NUEVA FUNCIÓN AÑADIDA
     fun obtenerRutasPorNombre(nombreRuta: String): Flow<List<Ruta>> {
         return rutaDao.obtenerRutasPorNombre(nombreRuta)
     }

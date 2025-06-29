@@ -4,9 +4,9 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+
 @Entity(tableName = "tabla_de_rutas")
 data class Ruta(
-
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
 
@@ -28,6 +28,12 @@ data class Ruta(
     @ColumnInfo(name = "barrios_principales")
     val barrios: String,
 
-    @ColumnInfo(name = "coordenadas_ruta") // <-- NUEVA COLUMNA
-    val coordenadas: String
+    @ColumnInfo(name = "coordenadas_ruta")
+    val coordenadas: String,
+
+   /* @ColumnInfo(name = "nombre_imagen")
+    val nombreImagen: String,*/
+
+    @ColumnInfo(name = "numero_antiguo")
+    val numeroAntiguo: String?
 )

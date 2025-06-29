@@ -1,4 +1,3 @@
-// ui/RutasAgrupadasAdapter.kt
 package com.example.opitago.ui
 
 import android.view.LayoutInflater
@@ -17,29 +16,33 @@ class RutasAgrupadasAdapter(
 ) : ListAdapter<RutaAgrupada, RutasAgrupadasAdapter.RutaAgrupadaViewHolder>(RutaAgrupadaDiffCallback()) {
 
     inner class RutaAgrupadaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
         private val numeroRutaTv: TextView = itemView.findViewById(R.id.tvNumeroRuta)
-        private val tarjetaIdaTv: TextView = itemView.findViewById(R.id.tvTarjetaIda)
-        private val tarjetaVueltaTv: TextView = itemView.findViewById(R.id.tvTarjetaVuelta)
-        private val columnaIda: LinearLayout = itemView.findViewById(R.id.columna_ida)
-        private val columnaVuelta: LinearLayout = itemView.findViewById(R.id.columna_vuelta)
+        private val numeroAntiguoLayout: LinearLayout = itemView.findViewById(R.id.layout_ruta_antigua)
+        private val numeroAntiguoTv: TextView = itemView.findViewById(R.id.tvNumeroAntiguo)
+
+
+        private val layoutColumnas: LinearLayout = itemView.findViewById(R.id.layout_columnas)
+        private val tarjetaIdaTv: TextView? = itemView.findViewById(R.id.tvTarjetaIda)
+        private val tarjetaVueltaTv: TextView? = itemView.findViewById(R.id.tvTarjetaVuelta)
 
         fun bind(rutaAgrupada: RutaAgrupada) {
+
             numeroRutaTv.text = rutaAgrupada.nombre
-            itemView.setOnClickListener { onItemClicked(rutaAgrupada) }
 
-            rutaAgrupada.rutaIda?.let {
-                columnaIda.visibility = View.VISIBLE
-                tarjetaIdaTv.text = it.tarjeta
-            } ?: run {
-                columnaIda.visibility = View.INVISIBLE
+            if (!rutaAgrupada.numeroAntiguo.isNullOrEmpty()) {
+                numeroAntiguoLayout.visibility = View.VISIBLE
+                numeroAntiguoTv.text = rutaAgrupada.numeroAntiguo
+            } else {
+                numeroAntiguoLayout.visibility = View.GONE
             }
 
-            rutaAgrupada.rutaVuelta?.let {
-                columnaVuelta.visibility = View.VISIBLE
-                tarjetaVueltaTv.text = it.tarjeta
-            } ?: run {
-                columnaVuelta.visibility = View.INVISIBLE
-            }
+
+            layoutColumnas.setOnClickListener { onItemClicked(rutaAgrupada) }
+
+
+            tarjetaIdaTv?.text = rutaAgrupada.rutaIda?.tarjeta ?: ""
+            tarjetaVueltaTv?.text = rutaAgrupada.rutaVuelta?.tarjeta ?: ""
         }
     }
 

@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun configurarRecyclerView() {
-        // CAMBIO: La creación del adapter ahora es más simple
+
         rutasAdapter = RutasAgrupadasAdapter { rutaAgrupada ->
             val intent = Intent(this, DetailActivity::class.java).apply {
                 putExtra("EXTRA_RUTA_NOMBRE", rutaAgrupada.nombre)

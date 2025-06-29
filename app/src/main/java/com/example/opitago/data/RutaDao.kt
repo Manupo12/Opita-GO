@@ -18,7 +18,6 @@ interface RutaDao {
     @Query("SELECT * FROM tabla_de_rutas WHERE barrios_principales LIKE :terminoDeBusqueda COLLATE NOCASE OR nombre_ruta LIKE :terminoDeBusqueda COLLATE NOCASE OR puntos_clave_recorrido LIKE :terminoDeBusqueda COLLATE NOCASE")
     fun buscarRutas(terminoDeBusqueda: String): Flow<List<Ruta>>
 
-    // NUEVA FUNCIÓN AÑADIDA
     @Query("SELECT * FROM tabla_de_rutas WHERE nombre_ruta = :nombreRuta")
     fun obtenerRutasPorNombre(nombreRuta: String): Flow<List<Ruta>>
 }

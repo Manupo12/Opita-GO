@@ -18,7 +18,7 @@ class DetailViewModel(private val repository: RutaRepository) : ViewModel() {
         viewModelScope.launch {
             repository.obtenerRutasPorNombre(nombreRuta)
                 .catch { e ->
-                    // Manejar error si es necesario
+
                 }
                 .collect { listaDeRutas ->
                     _rutas.value = listaDeRutas

@@ -16,11 +16,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.OpitaGO"
-        tools:targetApi="31">
+        tools:targetApi="31"
+        tools:replace="android:label, android:icon, android:roundIcon, android:allowBackup">
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCwDK8UMrpqN466hu3Z8NQe4FmuhNAVaqs" />
+            android:value="AIzaSyB3nj0aBc6xh_LtaikImPsO1-iy9LwdwbM"
+            />
 
         <activity
             android:name=".ui.MainActivity"
@@ -34,6 +36,11 @@
         <activity
             android:name=".ui.DetailActivity"
             android:exported="false" />
+        <activity
+            android:name=".ui.PlannerActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
 
     </application>
 

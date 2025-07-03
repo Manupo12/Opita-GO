@@ -56,7 +56,7 @@
                 android:layout_marginTop="16dp"
                 android:text="Recorrido IDA"
                 android:textStyle="bold"
-                android:textColor="@color/verde_oscuro_opita"/>
+                android:textColor="@color/opita_yellow_primary"/>
 
             <TextView
                 android:id="@+id/tvRecorridoIda"
@@ -71,7 +71,7 @@
                 android:layout_marginTop="16dp"
                 android:text="Recorrido VUELTA"
                 android:textStyle="bold"
-                android:textColor="@color/rojo_vuelta"/>
+                android:textColor="@color/opita_red_accent"/>
 
             <TextView
                 android:id="@+id/tvRecorridoVuelta"

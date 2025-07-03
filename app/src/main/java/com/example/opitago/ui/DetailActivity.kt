@@ -141,7 +141,7 @@ class DetailActivity : AppCompatActivity(), OnMapReadyCallback {
         rutas.forEach { ruta ->
             val puntosDeRuta = parseCoordenadas(ruta.coordenadas)
             if (puntosDeRuta.isNotEmpty()) {
-                val colorDeRuta = if (ruta.sentido == "Ida") Color.GREEN else Color.RED
+                val colorDeRuta = if (ruta.sentido == "Ida") ContextCompat.getColor(this, R.color.opita_yellow_primary) else ContextCompat.getColor(this, R.color.opita_red_accent)
                 val polylineOptions = PolylineOptions()
                     .addAll(puntosDeRuta)
                     .color(colorDeRuta)

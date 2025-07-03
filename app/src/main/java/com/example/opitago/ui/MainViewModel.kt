@@ -1,3 +1,4 @@
+// En el archivo ui/MainViewModel.kt
 package com.example.opitago.ui
 
 import androidx.lifecycle.ViewModel
@@ -14,11 +15,28 @@ class MainViewModel(private val repository: RutaRepository) : ViewModel() {
     private val _terminoDeBusqueda = MutableStateFlow("")
     val terminoDeBusqueda: StateFlow<String> = _terminoDeBusqueda
 
+    private val _filtroActivo = MutableStateFlow<String?>(null)
+    val filtroActivo: StateFlow<String?> = _filtroActivo
+
     fun enBusquedaCambiada(query: String) {
         _terminoDeBusqueda.value = query
+        if (query.isBlank()) {
+            _filtroActivo.value = null
+        }
     }
 
-    val rutasAgrupadas: StateFlow<List<RutaAgrupada>> = _terminoDeBusqueda
+    fun setFiltroActivo(filtro: String) {
+        if (_filtroActivo.value == filtro) {
+            _terminoDeBusqueda.value = ""
+            _filtroActivo.value = null
+        } else {
+            _terminoDeBusqueda.value = filtro
+            _filtroActivo.value = filtro
+        }
+    }
+
+
+    val rutasVisibles: StateFlow<List<MainScreenItem>> = _terminoDeBusqueda
         .flatMapLatest { query ->
             val flowDeRutas = if (query.isBlank()) {
                 repository.todasLasRutas
@@ -26,16 +44,15 @@ class MainViewModel(private val repository: RutaRepository) : ViewModel() {
                 repository.buscarRutas("%$query%")
             }
 
-            flowDeRutas.map { listaPlana ->
-                listaPlana.groupBy { it.nombre }
-                    .map { (nombre, rutasDelGrupo) ->
-                        RutaAgrupada(
-                            nombre = nombre,
-                            numeroAntiguo = rutasDelGrupo.firstNotNullOfOrNull { it.numeroAntiguo },
-                            rutaIda = rutasDelGrupo.find { it.sentido == "Ida" || it.sentido == "Único" },
-                            rutaVuelta = rutasDelGrupo.find { it.sentido == "Vuelta" }
-                        )
-                    }
+
+            flowDeRutas.map { listaPlanaDeRutas ->
+                if (query.isNotBlank()) {
+
+                    crearListaPlanaAgrupada(listaPlanaDeRutas)
+                } else {
+
+                    crearListaAgrupadaPorComuna(listaPlanaDeRutas)
+                }
             }
         }
         .stateIn(
@@ -43,4 +60,66 @@ class MainViewModel(private val repository: RutaRepository) : ViewModel() {
             started = SharingStarted.WhileSubscribed(5000L),
             initialValue = emptyList()
         )
+
+
+    private fun crearListaAgrupadaPorComuna(rutas: List<Ruta>): List<MainScreenItem> {
+        val itemsFinales = mutableListOf<MainScreenItem>()
+
+
+        val rutasPorComuna = mutableMapOf<String, MutableList<Ruta>>()
+        rutas.forEach { ruta ->
+            ruta.comuna.split(",").forEach { comunaStr ->
+                val comunaLimpia = comunaStr.trim()
+                if (comunaLimpia.isNotEmpty()) {
+                    rutasPorComuna.getOrPut(comunaLimpia) { mutableListOf() }.add(ruta)
+                }
+            }
+        }
+
+
+        val comunasOrdenadas = rutasPorComuna.keys.sortedWith(
+            compareBy(
+                { it.toIntOrNull() ?: Int.MAX_VALUE },
+                { it }
+            )
+        )
+
+
+        comunasOrdenadas.forEach { comuna ->
+            itemsFinales.add(HeaderItem(comuna))
+            val rutasDeLaComuna = rutasPorComuna[comuna] ?: emptyList()
+
+            val listaAgrupada = rutasDeLaComuna
+                .groupBy { it.nombre }
+                .map { (nombre, rutasDelGrupo) ->
+                    RutaAgrupada(
+                        nombre = nombre,
+                        numeroAntiguo = rutasDelGrupo.firstNotNullOfOrNull { it.numeroAntiguo },
+                        rutaIda = rutasDelGrupo.find { it.sentido == "Ida" || it.sentido == "Único" },
+                        rutaVuelta = rutasDelGrupo.find { it.sentido == "Vuelta" },
+                        isExpanded = false
+                    )
+                }
+            itemsFinales.addAll(listaAgrupada.map { RutaItem(it) })
+        }
+
+        return itemsFinales
+    }
+
+
+    private fun crearListaPlanaAgrupada(rutas: List<Ruta>): List<MainScreenItem> {
+        return rutas
+            .groupBy { it.nombre }
+            .map { (nombre, rutasDelGrupo) ->
+                RutaItem(
+                    RutaAgrupada(
+                        nombre = nombre,
+                        numeroAntiguo = rutasDelGrupo.firstNotNullOfOrNull { it.numeroAntiguo },
+                        rutaIda = rutasDelGrupo.find { it.sentido == "Ida" || it.sentido == "Único" },
+                        rutaVuelta = rutasDelGrupo.find { it.sentido == "Vuelta" },
+                        isExpanded = false
+                    )
+                )
+            }
+    }
 }

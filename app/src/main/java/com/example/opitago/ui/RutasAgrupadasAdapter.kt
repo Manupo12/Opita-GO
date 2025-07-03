@@ -9,25 +9,25 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.opitago.R
-import com.example.opitago.data.RutaAgrupada
+
+
+private const val VIEW_TYPE_HEADER = 0
+private const val VIEW_TYPE_RUTA = 1
 
 class RutasAgrupadasAdapter(
-    private val onItemClicked: (RutaAgrupada) -> Unit
-) : ListAdapter<RutaAgrupada, RutasAgrupadasAdapter.RutaAgrupadaViewHolder>(RutaAgrupadaDiffCallback()) {
+    private val onItemClicked: (RutaItem) -> Unit
+) : ListAdapter<MainScreenItem, RecyclerView.ViewHolder>(MainScreenDiffCallback()) {
 
-    inner class RutaAgrupadaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
+    inner class RutaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val numeroRutaTv: TextView = itemView.findViewById(R.id.tvNumeroRuta)
         private val numeroAntiguoLayout: LinearLayout = itemView.findViewById(R.id.layout_ruta_antigua)
         private val numeroAntiguoTv: TextView = itemView.findViewById(R.id.tvNumeroAntiguo)
+        private val tarjetaIdaTv: TextView = itemView.findViewById(R.id.tvTarjetaIda)
+        private val tarjetaVueltaTv: TextView = itemView.findViewById(R.id.tvTarjetaVuelta)
 
-
-        private val layoutColumnas: LinearLayout = itemView.findViewById(R.id.layout_columnas)
-        private val tarjetaIdaTv: TextView? = itemView.findViewById(R.id.tvTarjetaIda)
-        private val tarjetaVueltaTv: TextView? = itemView.findViewById(R.id.tvTarjetaVuelta)
-
-        fun bind(rutaAgrupada: RutaAgrupada) {
-
+        fun bind(rutaItem: RutaItem) {
+            val rutaAgrupada = rutaItem.rutaAgrupada
             numeroRutaTv.text = rutaAgrupada.nombre
 
             if (!rutaAgrupada.numeroAntiguo.isNullOrEmpty()) {
@@ -37,32 +37,77 @@ class RutasAgrupadasAdapter(
                 numeroAntiguoLayout.visibility = View.GONE
             }
 
-
-            layoutColumnas.setOnClickListener { onItemClicked(rutaAgrupada) }
-
-
-            tarjetaIdaTv?.text = rutaAgrupada.rutaIda?.tarjeta ?: ""
-            tarjetaVueltaTv?.text = rutaAgrupada.rutaVuelta?.tarjeta ?: ""
+            itemView.setOnClickListener { onItemClicked(rutaItem) }
+            tarjetaIdaTv.text = rutaAgrupada.rutaIda?.tarjeta ?: ""
+            tarjetaVueltaTv.text = rutaAgrupada.rutaVuelta?.tarjeta ?: ""
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RutaAgrupadaViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_ruta_agrupada, parent, false)
-        return RutaAgrupadaViewHolder(view)
+
+    inner class HeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val headerTv: TextView = itemView.findViewById(R.id.tvHeader)
+        fun bind(headerItem: HeaderItem) {
+
+            val nombreComuna = headerItem.nombreComuna
+                .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                .replace("_", " ")
+
+            headerTv.text = when {
+                nombreComuna.all { it.isDigit() } -> "Comuna $nombreComuna"
+                else -> nombreComuna
+            }
+        }
     }
 
-    override fun onBindViewHolder(holder: RutaAgrupadaViewHolder, position: Int) {
-        holder.bind(getItem(position))
+
+    override fun getItemViewType(position: Int): Int {
+        return when (getItem(position)) {
+            is HeaderItem -> VIEW_TYPE_HEADER
+            is RutaItem -> VIEW_TYPE_RUTA
+            // El else es por seguridad, no debería ocurrir
+            else -> throw IllegalArgumentException("Tipo de vista desconocido")
+        }
+    }
+
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return when (viewType) {
+            VIEW_TYPE_HEADER -> {
+                val view = LayoutInflater.from(parent.context)
+                    .inflate(R.layout.item_comuna_header, parent, false)
+                HeaderViewHolder(view)
+            }
+            VIEW_TYPE_RUTA -> {
+                val view = LayoutInflater.from(parent.context)
+                    .inflate(R.layout.item_ruta_agrupada, parent, false)
+                RutaViewHolder(view)
+            }
+            else -> throw IllegalArgumentException("Tipo de vista desconocido")
+        }
+    }
+
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (val item = getItem(position)) {
+            is HeaderItem -> (holder as HeaderViewHolder).bind(item)
+            is RutaItem -> (holder as RutaViewHolder).bind(item)
+        }
     }
 }
 
-class RutaAgrupadaDiffCallback : DiffUtil.ItemCallback<RutaAgrupada>() {
-    override fun areItemsTheSame(oldItem: RutaAgrupada, newItem: RutaAgrupada): Boolean {
-        return oldItem.nombre == newItem.nombre
+
+class MainScreenDiffCallback : DiffUtil.ItemCallback<MainScreenItem>() {
+    override fun areItemsTheSame(oldItem: MainScreenItem, newItem: MainScreenItem): Boolean {
+        return if (oldItem is HeaderItem && newItem is HeaderItem) {
+            oldItem.nombreComuna == newItem.nombreComuna
+        } else if (oldItem is RutaItem && newItem is RutaItem) {
+            oldItem.rutaAgrupada.nombre == newItem.rutaAgrupada.nombre
+        } else {
+            false
+        }
     }
 
-    override fun areContentsTheSame(oldItem: RutaAgrupada, newItem: RutaAgrupada): Boolean {
+    override fun areContentsTheSame(oldItem: MainScreenItem, newItem: MainScreenItem): Boolean {
         return oldItem == newItem
     }
 }

@@ -8,8 +8,14 @@
     android:layout_marginTop="8dp"
     android:layout_marginEnd="16dp"
     android:layout_marginBottom="8dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
     app:cardCornerRadius="12dp"
-    app:cardElevation="4dp">
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="@color/white"
+    app:strokeColor="@color/divider_color"
+    app:strokeWidth="1dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -84,16 +90,12 @@
                 tools:text="28" />
         </LinearLayout>
 
-
         <LinearLayout
             android:id="@+id/layout_columnas"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:baselineAligned="false"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground"
             android:orientation="horizontal"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -111,7 +113,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="IDA"
-                    android:textColor="@color/opita_green_dark"
+                    android:textColor="@color/opita_yellow_primary"
                     android:textSize="12sp"
                     android:textStyle="bold" />
                 <TextView

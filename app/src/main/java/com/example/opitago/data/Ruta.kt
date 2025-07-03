@@ -34,6 +34,11 @@ data class Ruta(
    /* @ColumnInfo(name = "nombre_imagen")
     val nombreImagen: String,*/
 
+    @ColumnInfo(name = "comuna")
+    val comuna: String,
+
     @ColumnInfo(name = "numero_antiguo")
     val numeroAntiguo: String?
+
+
 )
